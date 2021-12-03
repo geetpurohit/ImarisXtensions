@@ -1,0 +1,179 @@
+#
+#
+#  SurfacesSplit XTension  
+#
+#  Copyright Bitplane AG
+#
+#    <CustomTools>
+#      <Menu>
+#       <Item name="test" icon="Python3" tooltip="WE are testing">
+#         <Command>Python3XT::test(%i)</Command>
+#       </Item>
+#      </Menu>
+#    </CustomTools>
+
+import sys 
+import time
+import colorama
+colorama.init(autoreset=True)
+import numpy as np	
+
+
+sys.path.append("C:\Program Files\Bitplane\Imaris 9.8.0\XT\python3") # unique path to you 
+sys.path.append("C:\Program Files\Bitplane\Imaris 9.8.0\Imaris.exe") # unique path to you 
+
+import ImarisLib
+	
+def test(aImarisId):
+	# Create an ImarisLib object
+	vImarisLib = ImarisLib.ImarisLib()
+
+	# Get an imaris object with id aImarisId
+	vImaris = vImarisLib.GetApplication(aImarisId)
+
+	# Check if the object is valid
+	if vImaris is None:
+		print('Could not connect to Imaris!')
+		# Sleep 2 seconds to give the user a chance to see the printed message
+		time.sleep(2)
+		return
+	# Get the factory
+	vFactory = vImaris.GetFactory()
+
+	# Get the surpass scene
+	vSurpassScene = vImaris.GetSurpassScene()
+	
+	# This XTension requires a loaded dataset
+	if vSurpassScene is None:
+		print('Please create some Surfaces in the Surpass scene!')
+		time.sleep(2)
+		return
+
+
+	# get the surfaces
+	vSurfaces = vFactory.ToSurfaces(vImaris.GetSurpassSelection())
+
+	if vSurfaces is None:
+		print('Please select some surfaces in the surpass scene!')
+		time.sleep(2)
+		return
+
+	# GET IDS SURFACES GET IDS () 
+	ids = vSurfaces.GetIds()
+	print(ids)
+	time.sleep(1)
+
+	#CODE STARRTS FROM HERE
+
+	temparr = []
+	for i in range(1906):	
+		#print(vSurfaces.GetSurfaceDataLayout(i)) #works fine
+		temparr.append(vSurfaces.GetSurfaceDataLayout(i))
+		print(i)
+	
+	#print(vSurfaces.GetSurfaceDataLayout(1911))
+	#print(vSurfaces.GetSurfaceDataLayout(1912)) #appears to be where this breaks. ???? what. assumption - there are 1912 surfaces in the cropped picture. 
+	#new update after unifying surfaces -> pushed back lol ?? don't forget 2nd instance
+	time.sleep(2)
+	print("\033[92m Printing Surface Data Layout Array \033[92m")
+	print(temparr)
+	print("\033[92m Finished Printing Surface Data Layout Array \033[92m")
+	time.sleep(2)
+
+	temparrfiltered = []
+	comarray2 = []
+	for i in range(1906):
+		if vSurfaces.GetSurfaceDataLayout(i).mSizeX < 2000: #filters out the small spots implement user
+			continue
+		temparrfiltered.append(vSurfaces.GetSurfaceDataLayout(i))
+		comarray2.append(vSurfaces.GetCenterOfMass(i))
+
+	comarray = np.array(comarray2).squeeze()
+	comarrayleft = []
+	comarrayright = []
+	print("here")
+	time.sleep(4)
+	for i in range(len(comarray)):
+		if comarray[i][0] < 92000:
+			comarrayleft.append(comarray[i])
+			continue
+		comarrayright.append(comarray[i])
+	
+	print(comarrayright)
+	print(comarrayleft)
+	print("\033[92m Finished Printing COM array before sorting \033[92m")
+	time.sleep(2)
+
+	comarrayright.sort(reverse = False, key = lambda x : x[1])
+	comarrayleft.sort(reverse = False, key = lambda x : x[1])
+
+
+	print(comarrayright)
+	print(comarrayleft)
+	print("\033[92m Finished Printing COM array after sorting \033[92m")
+	time.sleep(15)
+
+
+	print(vSurfaces.GetCenterOfMass(0))
+	time.sleep(5)
+	print("\033[92m Printing filtered array now \033[92m")
+	print(temparrfiltered)
+	
+	print("\033[92m Finished Printing Filtered Array! \033[92m")
+	time.sleep(2)
+	print("\033[92m Size of Filtered Array: \033[92m", len(temparrfiltered)) #from 1912 surfaces to 15, thats an improvement !  YAY :3
+
+	time.sleep(2)
+
+	#next task to get max x and y array from the new temparrfilter
+	xsizearray, ysizearray, extendxsizeMaxarray = ([] for i in range(3))
+	for i in temparrfiltered:
+		xsizearray.append(i.mSizeX)
+		ysizearray.append(i.mSizeY)
+		extendxsizeMaxarray.append(i.mExtendMaxX)
+
+		
+	print('here is the xsize array:' , xsizearray)
+	print('')
+	print('\nhere is the ysize array:' , ysizearray)
+	print('')
+	print('\nhere is the extendXsizeMaxarray:' , extendxsizeMaxarray)
+	print('')
+	print('\n The Length of mExtendMaxX array is:L', len(extendxsizeMaxarray)) 
+	print('')
+	time.sleep(2)
+'''
+
+	maxX = max(xsizearray)
+	maxY = max(ysizearray)
+	z = len(temparrfiltered) #
+
+	data = np.zeros([xsizearray, ysizearray, len(temparrfiltered), vImaris.GetImage(0).GetSizeC()], dtype = float)
+
+	
+	imagedataset = vImaris.GetImage(0)
+
+	xdatamin = imagedataset.GetExtendMinX()
+	xdatamax = imagedataset.GetExtendMaxX()
+	ydatamin = imagedataset.GetExtendMinY()
+	ydatamax = imagedataset.GetExtendMaxY()	
+	zdatamin = imagedataset.GetExtendMinZ()
+	zdatamax = imagedataset.GetExtendMaxZ()
+	
+	vx = (xdatamax - (xdatamin)) / (imagedataset.GetSizeX()) #for the offset
+	vy = (ydatamax - (ydatamin)) / (imagedataset.GetSizeY())
+	vz = (zdatamax - (zdatamin)) / (imagedataset.GetSizeZ())
+
+	for i,id in enumerate(temparrfiltered):
+		vx1min = (id.ExtendMinX - xdatamin)/(vx)
+		vy1min = (id.ExtendMinY - xdatamin)/(vy)
+		vz1min = (id.ExtendMinZ - xdatamin)/(vz)
+
+		voxel = vx * vy * vz
+	
+		for channel in imagedataset.GetSizeC():
+			data[0:id.MsizeX, 0:id.MsizeY, i, channel] = imagedataset.GetDataSubVolumeFloats(vx1min, vy1min, vz1min, channel, 0, id.mSizeX, id.mSizeY, id.mSizeZ) #gives data for 1 chan
+
+'''
+	#horizontally they won't align, so prio will be for vertical. so wanna sort through y first and then x.
+	# basic idea is to try to get documentation for surface filter location threshold
