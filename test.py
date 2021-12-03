@@ -18,6 +18,7 @@ import colorama
 colorama.init(autoreset=True)
 import numpy as np	
 import subprocess
+#test
 
 sys.path.append("C:\Program Files\Bitplane\Imaris 9.8.0\XT\python3") # unique path to you 
 sys.path.append("C:\Program Files\Bitplane\Imaris 9.8.0\Imaris.exe") # unique path to you 
@@ -181,6 +182,7 @@ def test(aImarisId):
 	tempvy1min = (sdlarrfiltered[0].mExtendMinY - xdatamin)/(vy)
 	tempvz1min = (sdlarrfiltered[0].mExtendMinZ - xdatamin)/(vz)
 
+
 	x = int(sdlarrfiltered[0].mExtendMinX)
 	y = int(sdlarrfiltered[0].mExtendMinY)
 	z = int(sdlarrfiltered[0].mExtendMinZ)
@@ -189,17 +191,7 @@ def test(aImarisId):
 	#print(imagedataset.GetDataSubVolumeFloats(x-7.17e4,y-2.73e4, 0, 2, 0, sdlarrfiltered[0].mSizeX, sdlarrfiltered[0].mSizeY, 1))
 	#time.sleep(10)
 
-	aImarisIdd = aImarisId + 1 #'id101
-	subprocess.Popen(["C:\Program Files\Bitplane\Imaris 9.8.0\Imaris.exe",'id' + str(aImarisIdd)]) #works but closes terminal 
-	while True:	
-		try:
-			vImarisApp = vImarisLib.GetApplication(aImarisIdd)
-			if(vFactory.IsApplication(vImarisApp)):
-				vImarisApp.SetVisible(False)
-				break
-		except:
-			continue
-	print('Instance set headless')
+
 
 
 	for i,id in enumerate(sdlarrfiltered):
@@ -215,7 +207,17 @@ def test(aImarisId):
 			data[0:id.mSizeX, 0:id.mSizeY, i, channel] = imagedataset.GetDataSubVolumeFloats(vx1min, vy1min, 0, channel, 0, id.mSizeX, id.mSizeY, 1) #gives data for 1 channel
 
 
-
+	aImarisIdd = aImarisId + 1 #'id101
+	subprocess.Popen(["C:\Program Files\Bitplane\Imaris 9.8.0\Imaris.exe",'id' + str(aImarisIdd)]) #works but closes terminal 
+	while True:	
+		try:
+			vImarisApp = vImarisLib.GetApplication(aImarisIdd)
+			if(vFactory.IsApplication(vImarisApp)):
+				vImarisApp.SetVisible(False)
+				break
+		except:
+			continue
+	print('Instance set headless')
 
 
 
