@@ -53,7 +53,7 @@ def test(aImarisId):
 		return
 	try: 
 			
-		# get the surfaces
+		# Get the Surfaces (Each Surface has a unique Surface Index and a Surface ID)
 		vSurfaces = vFactory.ToSurfaces(vImaris.GetSurpassSelection())
 
 		if vSurfaces is None:
@@ -85,7 +85,13 @@ def test(aImarisId):
 			sdlarrfiltered.append(vSurfaces.GetSurfaceDataLayout(i))
 			comarray2.append(vSurfaces.GetCenterOfMass(i))
 
+		print("Printig Comarray2 now:...")
+		print(comarray2)		
+
 		comarray = np.array(comarray2).squeeze()
+		print("Printig Comarray now:...")
+		print(comarray)
+		time.sleep(10)
 		comarrayleft = []
 		comarrayright = []
 
@@ -123,7 +129,7 @@ def test(aImarisId):
 		
 		print("\033[92m Finished Printing Filtered Array! \033[92m")
 		time.sleep(1)
-		print("\033[92m Size of Filtered Array: \033[92m", len(sdlarrfiltered)) #from 1912 surfaces to 15, thats an improvement !  YAY :3
+		print("\033[92m Size of Filtered Array: \033[92m", len(sdlarrfiltered))
 
 		time.sleep(1)
 
@@ -150,13 +156,16 @@ def test(aImarisId):
 		imagedataset = vImaris.GetImage(0)
 		print("\033[92m Printing igmdtst now \033[92m")
 		print(imagedataset)
+		print('hhhhhhhhhhhhh')
+		print(imagedataset.GetExtendMinX())
+		time.sleep(10)
 
 		maxX = max(xsizearray)
 		maxY = max(ysizearray)
 		z = len(sdlarrfiltered) #
 
 
-		data = np.zeros((maxX, maxY, z, imagedataset.GetSizeC(), 1), dtype = np.int16) 
+		data = np.zeros((maxX, maxY, z, imagedataset.GetSizeC(), 1), dtype = np.float32) 
 
 		print('maxX: ',maxX)
 		print('maxY: ', maxY)
@@ -164,16 +173,16 @@ def test(aImarisId):
 		print('',imagedataset.GetSizeC())
 		time.sleep(10)
 
-		xdatamax = imagedataset.GetExtendMaxX() - 7.17e4
-		xdatamin = imagedataset.GetExtendMinX() - 7.17e4
-		ydatamin = imagedataset.GetExtendMinY() - 2.73e4
-		ydatamax = imagedataset.GetExtendMaxY() - 2.73e4
-		zdatamin = imagedataset.GetExtendMinZ() + 1
-		zdatamax = imagedataset.GetExtendMaxZ() + 1
+		xdatamin = imagedataset.GetExtendMinX()
+		xdatamax = imagedataset.GetExtendMaxX()
+		ydatamin = imagedataset.GetExtendMinY()
+		ydatamax = imagedataset.GetExtendMaxY()
+		zdatamin = imagedataset.GetExtendMinZ()
+		zdatamax = imagedataset.GetExtendMaxZ()
 
-		vx = (xdatamax - (xdatamin)) / (imagedataset.GetSizeX()) #for the offset
-		vy = (ydatamax - (ydatamin)) / (imagedataset.GetSizeY())
-		vz = (zdatamax - (zdatamin)) / (imagedataset.GetSizeZ())
+		vx = (xdatamax - xdatamin) / (imagedataset.GetSizeX()) 
+		vy = (ydatamax - ydatamin) / (imagedataset.GetSizeY())
+		vz = (zdatamax - zdatamin) / (imagedataset.GetSizeZ())
 
 		print(vx)
 		print(vy)
@@ -181,20 +190,16 @@ def test(aImarisId):
 		print('here')
 		time.sleep(2)
 
-		tempvx1min = (sdlarrfiltered[0].mExtendMinX - xdatamin)/(vx)
-		tempvy1min = (sdlarrfiltered[0].mExtendMinY - xdatamin)/(vy)
-		tempvz1min = (sdlarrfiltered[0].mExtendMinZ - xdatamin)/(vz)
-
 
 		x = int(sdlarrfiltered[0].mExtendMinX)
 		y = int(sdlarrfiltered[0].mExtendMinY)
 		z = int(sdlarrfiltered[0].mExtendMinZ)
 	
-		for i,id in enumerate(sdlarrfiltered):
+		for i,id in enumerate(shincomarray): #use the sorted array and check if the indexes match the slice numbers
 			
-			vx1min = (id.mExtendMinX - 7.17e4 - xdatamin)/(vx)
-			vy1min = (id.mExtendMinY - 2.73e4 - xdatamin)/(vy)
-			vz1min = (id.mExtendMinZ + 1 - xdatamin)/(vz)
+			vx1min = (id.mExtendMinX - xdatamin)/(vx)
+			vy1min = (id.mExtendMinY - ydatamin)/(vy)
+			vz1min = (id.mExtendMinZ - zdatamin)/(vz)
 			voxel = vx * vy * vz
 
 			print('Working on Surface:', i)
@@ -207,37 +212,6 @@ def test(aImarisId):
 		#data = np.load("D:\Abraira Lab Research\Image Analysis\data.npy")
 		#data is ok here (don't know if contents are ok but will open in imaris to check after pushing the stack)
 
-		'''
-		print('data file created')
-		time.sleep(5)
-		aImarisIdd = aImarisId + 1 #'id101
-		subprocess.Popen(["C:\Program Files\Bitplane\Imaris 9.8.0\Imaris.exe",'id' + str(aImarisIdd)]) 
-		time.sleep(5)
-		while True:	
-			try:
-				vImarisApp = vImarisLib.GetApplication(aImarisIdd)
-				if(vFactory.IsApplication(vImarisApp)):
-					vImarisApp.SetVisible(True)
-					break
-			except:	
-				continue
-		
-		print('set visible false')
-		time.sleep(1)
-		vImarisApp.FileOpen("D:\Abraira Lab Research\Image Analysis\tempp.ims", "")
-		time.sleep(20)
-		vImarisApp.GetImage(0).SetDataFloats(data)
-		print('call done')
-		time.sleep(1)
-		vImarisApp.FileSave("D:\testt.ims")
-		print('File Saved')
-		time.sleep(5)
-		print('fin')
-		time.sleep(4)
-		'''
-
-		#horizontally they won't align, so prio will be for vertical. so wanna sort through y first and then x.
-		# basic idea is to try to get documentation for surface filter location threshold
 	except Exception:
 		import traceback
 		traceback.print_exc()
