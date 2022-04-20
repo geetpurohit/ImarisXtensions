@@ -6,7 +6,7 @@
 #
 #    <CustomTools>
 #      <Menu>
-#       <Item name="Hello" icon="Python3" tooltip="Hello.">
+#       <Item name="3D Reconstruction: Export" icon="Python3" tooltip="Load the data into a new IMARIS instance and export as an .ims file">
 #         <Command>Python3XT::hello(%i)</Command>
 #       </Item>
 #      </Menu>

@@ -6,8 +6,8 @@
 #
 #    <CustomTools>
 #      <Menu>
-#       <Item name="Single" icon="Python3" tooltip="WE are testing single.">
-#         <Command>Python3XT::test(%i)</Command>
+#       <Item name="3D Reconstruction: Single" icon="Python3" tooltip="Reconstruct 3D surface from sliced spinal cord sections.">
+#         <Command>Python3XT::3D Reconstruction Single(%i)</Command>
 #       </Item>
 #      </Menu>
 #    </CustomTools>

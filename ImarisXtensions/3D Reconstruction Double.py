@@ -6,7 +6,7 @@
 #
 #    <CustomTools>
 #      <Menu>
-#       <Item name="test" icon="Python3" tooltip="WE are testing">
+#       <Item name="3D Reconstruction: Double" icon="Python3" tooltip="3D Reconstruction for bi-columnal spinal cord slices">
 #         <Command>Python3XT::test(%i)</Command>
 #       </Item>
 #      </Menu>
@@ -17,15 +17,14 @@ import time
 import colorama
 colorama.init(autoreset=True)
 import numpy as np	
-import subprocess
 
-sys.path.append("C:\Program Files\Bitplane\Imaris 9.8.0\XT\python3") # unique path to you 
-sys.path.append("C:\Program Files\Bitplane\Imaris 9.8.0\Imaris.exe") # unique path to you 
+sys.path.append("C:\Program Files\Bitplane\Imaris x64 9.7.2\XT\python3") # unique path to you 
+sys.path.append("C:\Program Files\Bitplane\Imaris x64 9.7.2\Imaris.exe") # unique path to you 
 
 import ImarisLib
 	
 def test(aImarisId):
-	
+
 	# Create an ImarisLib object
 	vImarisLib = ImarisLib.ImarisLib()
 
@@ -63,84 +62,62 @@ def test(aImarisId):
 
 		# GET IDS SURFACES GET IDS () 
 		ids = vSurfaces.GetIds()
-		print(ids)
-		time.sleep(2)
-		sdl = []
+		sdl = [] #Surface Data Layout Array
 
 		for i in range(len(ids)):
 			sdl.append(vSurfaces.GetSurfaceDataLayout(i))
 
-		
-		time.sleep(2)
 		print("\033[92m Printing Surface Data Layout Array \033[92m")
 		print(sdl)
 		print("\033[92m Finished Printing Surface Data Layout Array \033[92m")
-		time.sleep(2)
+		time.sleep(200)
 
-		sdlarrfiltered = []
-		comarray2 = []
+		sdlarrfilteredleft = []
+		sdlarrfilteredright = []
+		
+		#sorting is tricky but we know that vertical hiearchy always follows. So what we do is halve -> sort L+R -> merge
+		#it is important to note that this only works for Double Slides, for single Slides you need to modify this
+		
+		imgmidpoint = (vImaris.GetImage(0).GetExtendMaxX() - vImaris.GetImage(0).GetExtendMinX())/2 + vImaris.GetImage(0).GetExtendMinX()
+
 		for i in range(len(ids)):
-			if vSurfaces.GetSurfaceDataLayout(i).mSizeX < 2000: #filters out the small spots implement user
+			if vSurfaces.GetSurfaceDataLayout(i).mSizeX < (0.1 * vImaris.GetImage(0).GetSizeX()): #we dont want to worry about anything smaller than 2000 microns
 				continue
-			sdlarrfiltered.append(vSurfaces.GetSurfaceDataLayout(i))
-			comarray2.append(vSurfaces.GetCenterOfMass(i))
 
-		print("Printig Comarray2 now:...")
-		print(comarray2)		
-
-		comarray = np.array(comarray2).squeeze()
-		print("Printig Comarray now:...")
-		print(comarray)
-		time.sleep(10)
-		comarrayleft = []
-		comarrayright = []
-
-		for i in range(len(comarray)):
-			if comarray[i][0] < 92000:
-				comarrayleft.append(comarray[i])
-				continue
-			comarrayright.append(comarray[i])
+			if vSurfaces.GetSurfaceDataLayout(i).mExtendMaxX < imgmidpoint: #halfway point
+				sdlarrfilteredleft.append(vSurfaces.GetSurfaceDataLayout(i))
+			
+			else:
+				sdlarrfilteredright.append(vSurfaces.GetSurfaceDataLayout(i))
+			
 		
-		print(comarrayright)
-		print(comarrayleft)
-		print("\033[92m Finished Printing COM array before sorting \033[92m")
-		time.sleep(1)
+		sdlarrfilteredright.sort(reverse = True, key = lambda x : x.mExtendMaxY)
+		sdlarrfilteredleft.sort(reverse = True, key = lambda x : x.mExtendMaxY)
 
-		comarrayright.sort(reverse = False, key = lambda x : x[1])
-		comarrayleft.sort(reverse = False, key = lambda x : x[1])
 
-		print(comarrayright)
-		print("\033[92m Finished Printing RCOM array after sorting \033[92m")
-		print(comarrayleft)
-		print("\033[92m Finished Printing LCOM array after sorting \033[92m")
-		print(comarrayright[1])
-		time.sleep(1)
 
-		shincomarray = []
-		for i in range(7):
-			shincomarray.append(comarrayleft[i])
-			shincomarray.append(comarrayright[i])
-			continue
+		print(sdlarrfilteredright)
+		print('finished printing sdl array right')
+		print(sdlarrfilteredleft)
+		print('finished printing sdl array left')
 
-		print("\033[92m Printing SHINCOM array now \033[92m")
-		print(shincomarray)
-		print("\033[92m Printing filtered array now \033[92m")
-		print(sdlarrfiltered)
+
+		sdl_filtered_sorted = []
+		for i in range(len(sdlarrfilteredleft)):
+			sdl_filtered_sorted.append(sdlarrfilteredleft[i])
+			sdl_filtered_sorted.append(sdlarrfilteredright[i])
 		
-		print("\033[92m Finished Printing Filtered Array! \033[92m")
-		time.sleep(1)
-		print("\033[92m Size of Filtered Array: \033[92m", len(sdlarrfiltered))
+		print(sdl_filtered_sorted)
 
-		time.sleep(1)
 
 		#next task to get max x and y array from the new sdlarrfilter
 		xsizearray, ysizearray, extendxsizeMaxarray = ([] for i in range(3))
-		for i in sdlarrfiltered:
+		for i in sdl_filtered_sorted:
 			xsizearray.append(i.mSizeX)
 			ysizearray.append(i.mSizeY)
 			extendxsizeMaxarray.append(i.mExtendMaxX)
 
-			
+		'''
 		print('here is the xsize array:' , xsizearray)
 		print('')
 		print('\nhere is the ysize array:' , ysizearray)
@@ -150,20 +127,19 @@ def test(aImarisId):
 		print('\n The Length of mExtendMaxX array is:L', len(extendxsizeMaxarray)) 
 		print('')
 		time.sleep(1)
-
+		'''
 
 		
 		imagedataset = vImaris.GetImage(0)
 		print("\033[92m Printing igmdtst now \033[92m")
 		print(imagedataset)
-		print('hhhhhhhhhhhhh')
 		print(imagedataset.GetExtendMinX())
-		time.sleep(10)
+		time.sleep(1)
 
 		maxX = max(xsizearray)
 		maxY = max(ysizearray)
-		z = len(sdlarrfiltered) #
-
+		z = len(sdl_filtered_sorted)
+		h = len(sdl_filtered_sorted)*vz #height of stack
 
 		data = np.zeros((maxX, maxY, z, imagedataset.GetSizeC(), 1), dtype = np.float32) 
 
@@ -171,7 +147,7 @@ def test(aImarisId):
 		print('maxY: ', maxY)
 		print('z: ', z)
 		print('',imagedataset.GetSizeC())
-		time.sleep(10)
+		time.sleep(1)
 
 		xdatamin = imagedataset.GetExtendMinX()
 		xdatamax = imagedataset.GetExtendMaxX()
@@ -191,11 +167,11 @@ def test(aImarisId):
 		time.sleep(2)
 
 
-		x = int(sdlarrfiltered[0].mExtendMinX)
-		y = int(sdlarrfiltered[0].mExtendMinY)
-		z = int(sdlarrfiltered[0].mExtendMinZ)
+		x = int(sdl_filtered_sorted[0].mExtendMaxX)
+		y = int(sdl_filtered_sorted[0].mExtendMaxY)
+		z = int(sdl_filtered_sorted[0].mExtendMaxZ)
 	
-		for i,id in enumerate(shincomarray): #use the sorted array and check if the indexes match the slice numbers
+		for i,id in enumerate(sdl_filtered_sorted): #use the sorted array and check if the indexes match the slice numbers
 			
 			vx1min = (id.mExtendMinX - xdatamin)/(vx)
 			vy1min = (id.mExtendMinY - ydatamin)/(vy)
@@ -205,12 +181,11 @@ def test(aImarisId):
 			print('Working on Surface:', i)
 			for channel in range(0, 3):
 				print('Working on Channel:', channel)
-				data[0:id.mSizeX, 0:id.mSizeY, i, channel] = imagedataset.GetDataSubVolumeFloats(vx1min, vy1min, 0, channel, 0, id.mSizeX, id.mSizeY, 1) #gives data for 1 channel
+				data[0:id.mSizeX, 0:id.mSizeY, i, channel] = imagedataset.GetDataSubVolumeFloats(vx1min, vy1min, vz1min, channel, 0, id.mSizeX, id.mSizeY, 1) #gives data for 1 channel
 		
 		
-		np.save("D:\Abraira Lab Research\Image Analysis\data", data)
+		np.save("N:\Geet\data2.npy", data)
 		#data = np.load("D:\Abraira Lab Research\Image Analysis\data.npy")
-		#data is ok here (don't know if contents are ok but will open in imaris to check after pushing the stack)
 
 	except Exception:
 		import traceback
